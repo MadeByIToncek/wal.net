@@ -21,14 +21,14 @@ public class PasswordTools {
         if(rs.next()) {
             salt = Base64.getDecoder().decode(rs.getString("value"));
         } else {
-            salt = generateSalt(2048);
+            salt = generateSalt();
             byte[] encode = Base64.getEncoder().encode(salt);
             dbcon.createStatement().executeUpdate("INSERT INTO walnet_cache VALUES ('%s', '%s'); ".formatted("salt",new String(encode)));
         }
         rs.close();
 
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
 
         return new String(Base64.getEncoder().encode(factory.generateSecret(spec).getEncoded()));
     }
@@ -42,12 +42,22 @@ public class PasswordTools {
         else throw new AuthenticationException("This user does not exist!");
     }
 
-    private static byte[] generateSalt(int saltLenght) {
+    private static byte[] generateSalt() {
         SecureRandom random = new SecureRandom();
-        byte[] salt = new byte[saltLenght];
+        byte[] salt = new byte[2048];
         random.nextBytes(salt);
         return salt;
     }
 
 
+    public static String getKey(Connection conn) throws SQLException {
+        ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM walnet_cache WHERE `key`='rsa';");
+        if(rs.next()) {
+            return rs.getString("value");
+        } else {
+            String key = new String(Base64.getEncoder().encode(generateSalt()));
+            conn.createStatement().executeUpdate("INSERT INTO walnet_cache VALUES ('%s', '%s'); ".formatted("rsa",key));
+            return key;
+        }
+    }
 }
