@@ -43,14 +43,17 @@ public class Main {
                     ctx.http.prefer405over404 = true;
                 })
                 .before(ctx -> {
-                    DecodedJWT decodedJWT = verifier.verify(new JSONObject(ctx.body()).getString("token"));
+                    if(!ctx.path().equals("/login")) {
+                        DecodedJWT token = verifier.verify(new JSONObject(ctx.body()).getString("token"));
+                        ctx.header("activeUser", token.getClaim("user").asString());
+                    }
                 })
                 .get("/", ctx -> ctx.result("Hello there!"))
                 .post("/login/", ctx -> {
                     JSONObject j = new JSONObject(ctx.body());
                     WalnetUser mockUser = new WalnetUser(j.getString("user"), j.getString("pwd"));
                     String token = provider.generateToken(mockUser);
-                    ctx.json(new JSONObject().put("token", token).toString());
+                    ctx.result(new JSONObject().put("token", token).toString());
                 })
                 .exception(JSONException.class, (e, ctx) ->  {
                     ctx.status(402).result("Unable to parse JSON");

@@ -27,7 +27,7 @@ class PasswordToolsTest {
 
     @org.junit.jupiter.api.Test
     void test() throws SQLException, NoSuchAlgorithmException, InvalidKeySpecException, AuthenticationException {
-        String hash = new String(PasswordTools.hash(conn, "test123"));
+        String hash = PasswordTools.hash(conn, "test123");
         System.out.println("hash() --> " + hash);
         conn.createStatement().executeUpdate("INSERT INTO walnet_users VALUES ('%s', '%s');".formatted("test", hash));
 
